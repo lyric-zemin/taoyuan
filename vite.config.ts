@@ -1,7 +1,7 @@
 import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
-import legacy from '@vitejs/plugin-legacy'
+// import legacy from '@vitejs/plugin-legacy'
 
 /** Dev-only：WebDAV 反向代理，绕过浏览器 CORS */
 const webdavProxy = (): Plugin => ({
@@ -60,10 +60,10 @@ export default defineConfig({
         }
       }
     }),
-    legacy({
-      targets: ['Chrome >= 51', 'Android >= 7'],
-      modernPolyfills: true
-    }),
+    // legacy({
+    //   targets: ['Chrome >= 51', 'Android >= 7'],
+    //   modernPolyfills: true
+    // }),
     webdavProxy()
   ],
   resolve: {
