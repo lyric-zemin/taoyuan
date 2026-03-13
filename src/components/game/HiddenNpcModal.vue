@@ -262,15 +262,15 @@
     const level = hiddenNpcStore.getAffinityLevel(props.npcId)
     switch (level) {
       case 'wary':
-        return 'text-muted'
+        return 'text-muted border-muted/30'
       case 'curious':
-        return 'text-water'
+        return 'text-water border-water/30'
       case 'trusting':
-        return 'text-success'
+        return 'text-success border-success/30'
       case 'devoted':
-        return 'text-accent'
+        return 'text-accent border-accent/30'
       case 'eternal':
-        return 'text-accent'
+        return 'text-accent border-accent/30'
     }
   })
 

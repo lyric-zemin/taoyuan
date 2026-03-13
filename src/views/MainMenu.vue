@@ -246,6 +246,10 @@
               <div class="flex space-x-3 justify-center">
                 <Button :icon-size="12" :icon="ArrowLeft" @click="showFarmConfirm = false">取消</Button>
                 <Button class="px-6" :icon-size="12" :icon="Play" @click="handleNewGame">开始旅程</Button>
+                <Button class="px-6" :icon-size="12" :icon="Star" @click="() => {
+                  createAdvancedCharacter = true; 
+                  handleNewGame()
+                }">高级角色</Button>
               </div>
             </div>
           </div>
@@ -355,7 +359,7 @@
 </template>
 
 <script setup lang="ts">
-  import { Play, FolderOpen, ArrowLeft, Trash2, Download, Upload, Info, Settings, ShieldCheck, X, UserRound } from 'lucide-vue-next'
+  import { Play, FolderOpen, ArrowLeft, Trash2, Download, Upload, Info, Settings, ShieldCheck, X, UserRound, Star } from 'lucide-vue-next'
   import Button from '@/components/game/Button.vue'
   import Divider from '@/components/game/Divider.vue'
   import { ref, computed } from 'vue'
@@ -372,6 +376,7 @@
   import { useAudio } from '@/composables/useAudio'
   import { showFloat, addLog } from '@/composables/useGameLog'
   import { resetAllStoresForNewGame } from '@/composables/useResetGame'
+  import { useAdvancedCharacter } from '@/composables/useAdvancedCharacter'
   import { useTutorialStore } from '@/stores/useTutorialStore'
   import type { FarmMapType, Gender } from '@/types'
   import { Capacitor } from '@capacitor/core'
@@ -402,6 +407,8 @@
   const showFarmConfirm = ref(false)
 
   const deleteTargetSlot = ref<number | null>(null)
+  const createAdvancedCharacter = ref(false)
+  const { initializeAdvancedCharacter } = useAdvancedCharacter()
 
   const selectedFarmDef = computed(() => FARM_MAP_DEFS.find(f => f.type === selectedMap.value))
 
@@ -448,61 +455,73 @@
       showFloat('存档槽位已满，请先删除一个旧存档。')
       return
     }
-    // 重置所有游戏 store 到初始状态，防止上一个存档数据残留
-    resetAllStoresForNewGame()
-    playerStore.setIdentity((charName.value.trim() || '未命名').slice(0, 4), charGender.value)
-    gameStore.startNewGame(selectedMap.value)
-    // 标准农场初始6×6，其余4×4
-    farmStore.resetFarm(selectedMap.value === 'standard' ? 6 : 4)
-    // 新手赠送：10个青菜种子
-    inventoryStore.addItem('seed_cabbage', 10)
-    // 草地农场：免费鸡舍 + 2只鸡
-    if (selectedMap.value === 'meadowlands') {
-      const coop = animalStore.buildings.find(b => b.type === 'coop')
-      if (coop) {
-        coop.built = true
-        coop.level = 1
-      }
-      animalStore.animals.push(
-        {
-          id: 'chicken_init_1',
-          type: 'chicken',
-          name: '小花',
-          friendship: 100,
-          mood: 200,
-          daysOwned: 0,
-          daysSinceProduct: 0,
-          wasFed: false,
-          fedWith: null,
-          wasPetted: false,
-          hunger: 0,
-          sick: false,
-          sickDays: 0
-        },
-        {
-          id: 'chicken_init_2',
-          type: 'chicken',
-          name: '小白',
-          friendship: 100,
-          mood: 200,
-          daysOwned: 0,
-          daysSinceProduct: 0,
-          wasFed: false,
-          fedWith: null,
-          wasPetted: false,
-          hunger: 0,
-          sick: false,
-          sickDays: 0
+    
+    const playerName = (charName.value.trim() || '未命名').slice(0, 4)
+    
+    if (createAdvancedCharacter.value) {
+      // 创建高级角色
+      initializeAdvancedCharacter(playerName, charGender.value, selectedMap.value)
+    } else {
+      // 重置所有游戏 store 到初始状态，防止上一个存档数据残留
+      resetAllStoresForNewGame()
+      playerStore.setIdentity(playerName, charGender.value)
+      gameStore.startNewGame(selectedMap.value)
+      // 标准农场初始6×6，其余4×4
+      farmStore.resetFarm(selectedMap.value === 'standard' ? 6 : 4)
+      // 新手赠送：10个青菜种子
+      inventoryStore.addItem('seed_cabbage', 10)
+      // 草地农场：免费鸡舍 + 2只鸡
+      if (selectedMap.value === 'meadowlands') {
+        const coop = animalStore.buildings.find(b => b.type === 'coop')
+        if (coop) {
+          coop.built = true
+          coop.level = 1
         }
-      )
+        animalStore.animals.push(
+          {
+            id: 'chicken_init_1',
+            type: 'chicken',
+            name: '小花',
+            friendship: 100,
+            mood: 200,
+            daysOwned: 0,
+            daysSinceProduct: 0,
+            wasFed: false,
+            fedWith: null,
+            wasPetted: false,
+            hunger: 0,
+            sick: false,
+            sickDays: 0
+          },
+          {
+            id: 'chicken_init_2',
+            type: 'chicken',
+            name: '小白',
+            friendship: 100,
+            mood: 200,
+            daysOwned: 0,
+            daysSinceProduct: 0,
+            wasFed: false,
+            fedWith: null,
+            wasPetted: false,
+            hunger: 0,
+            sick: false,
+            sickDays: 0
+          }
+        )
+      }
+      questStore.initMainQuest()
+      // 新手引导：游戏开始时立即显示欢迎提示
+      const tutorialStore = useTutorialStore()
+      if (tutorialStore.enabled) {
+        addLog('柳村长说：「欢迎来到桃源乡！背包里有白菜种子，去农场开垦土地、播种吧。」')
+        tutorialStore.markTipShown('tip_welcome')
+      }
     }
-    questStore.initMainQuest()
-    // 新手引导：游戏开始时立即显示欢迎提示
-    const tutorialStore = useTutorialStore()
-    if (tutorialStore.enabled) {
-      addLog('柳村长说：「欢迎来到桃源乡！背包里有白菜种子，去农场开垦土地、播种吧。」')
-      tutorialStore.markTipShown('tip_welcome')
-    }
+    
+    // 重置高级角色标志
+    createAdvancedCharacter.value = false
+    
     void router.push('/game')
   }
 
