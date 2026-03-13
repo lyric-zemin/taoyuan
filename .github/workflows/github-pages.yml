@@ -2,10 +2,11 @@ name: 构建 Github Pages
 
 on:
   push:
-    branches: [main]
+    branches: [goldfinger]
     paths-ignore:
       - '**.md'
       - '.github/**'
+  workflow_dispatch:
 
 permissions:
   contents: read
